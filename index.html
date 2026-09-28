@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paymaster's tax ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --stone:#D9D7D0; --panel:#ECEAE4; --ink:#22262A; --muted:#5B6167;
+  --oxblood:#7A1F24; --brass:#9A7428; --silver:#8E969C; --gold:#B8912F;
+  --line:#B9B5AA; --field:#F7F6F2; --good:#3F5E3A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stone:#1D2124; --panel:#272C30; --ink:#E6E3DB; --muted:#A3A9AE;
+    --oxblood:#D0666B; --brass:#C99A45; --silver:#B7BFC5; --gold:#D8B04E;
+    --line:#41484E; --field:#1A1D20; --good:#8DB783;
+  }
+}
+:root[data-theme="dark"]{
+  --stone:#1D2124; --panel:#272C30; --ink:#E6E3DB; --muted:#A3A9AE;
+  --oxblood:#D0666B; --brass:#C99A45; --silver:#B7BFC5; --gold:#D8B04E;
+  --line:#41484E; --field:#1A1D20; --good:#8DB783;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--stone);color:var(--ink);
+  font-family:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:1rem;line-height:1.45}
+main{max-width:64rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+h1{font-family:"IM Fell English",Georgia,"Times New Roman",serif;font-weight:400;
+  font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;margin:0 0 .25rem;color:var(--oxblood)}
+.lede{margin:0 0 1.5rem;color:var(--muted);max-width:40rem}
+h2{font-family:"IM Fell English",Georgia,serif;font-weight:400;font-size:1.5rem;margin:0 0 .75rem}
+section{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1rem;margin-bottom:1rem}
+label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
+input[type=text],input[type=number],select{font:inherit;color:var(--ink);background:var(--field);
+  border:1px solid var(--line);border-radius:3px;padding:.4rem .5rem;width:100%;min-width:0}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem}
+.coin-in{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem}
+.coin-in span{display:flex;flex-direction:column;gap:.15rem}
+.coin-in small{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:.3rem}
+.dot{width:.7rem;height:.7rem;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+.dot.gc{background:var(--gold)} .dot.s{background:var(--silver)} .dot.d{background:var(--brass)}
+.pct{display:flex;align-items:center;gap:.35rem} .pct input{max-width:6rem}
+.hint{font-size:.85rem;color:var(--muted);margin:.35rem 0 0}
+.warn{color:var(--oxblood)}
+.band-strip{display:flex;height:.6rem;border-radius:2px;overflow:hidden;margin-top:.75rem;border:1px solid var(--line)}
+.band-strip i{display:block;height:100%}
+.people{display:flex;flex-direction:column;gap:0}
+.row{display:grid;grid-template-columns:1.4fr 1fr 12rem 4.5rem 1fr 1fr;gap:.6rem;align-items:end;
+  padding:.75rem 0;border-top:1px solid var(--line)}
+.row.head{border-top:0;padding-top:0;font-size:.85rem;color:var(--muted);align-items:end}
+.row.exempt .tax{color:var(--muted)}
+.cell-label{display:none}
+.out{font-variant-numeric:tabular-nums;padding:.4rem 0}
+.out b{font-weight:700}
+.out small{display:block;color:var(--muted);font-size:.8rem}
+.chk{display:flex;align-items:center;gap:.35rem;padding:.4rem 0}
+.chk input{width:1.1rem;height:1.1rem;accent-color:var(--oxblood)}
+.treasury{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:1rem}
+.big{font-family:"IM Fell English",Georgia,serif;font-size:1.9rem;line-height:1.1;color:var(--ink)}
+.big.tax{color:var(--oxblood)}
+.bar{position:sticky;bottom:0;padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom,0px));background:var(--panel);
+  border-top:1px solid var(--line);display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.bar p{margin:0;font-size:.9rem;color:var(--muted)}
+button{font:inherit;font-weight:700;background:var(--oxblood);color:#fff;border:0;border-radius:3px;padding:.55rem 1rem;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500}
+@media (max-width:52rem){
+  .row.head{display:none}
+  .row{grid-template-columns:1fr 1fr;gap:.5rem .75rem}
+  .row .wage{grid-column:1 / -1}
+  .cell-label{display:block;font-size:.8rem;color:var(--muted)}
+}
+@media (prefers-reduced-motion:no-preference){ .big{transition:color .2s} }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div class="bar" id="bar"></div>
+<script type="application/json" id="state">{"company":"The Iron Hounds","period":"week","allowance":60,"baseRate":10,"higherAt":480,"higherRate":25,"rounding":"down","people":[{"name":"Ulrike Brandt","role":"Captain","wage":720,"exempt":false},{"name":"Otto Kessler","role":"Sergeant","wage":360,"exempt":false},{"name":"Magda Fenn","role":"Crossbow","wage":180,"exempt":false},{"name":"Jurgen Voss","role":"Halberd","wage":150,"exempt":false},{"name":"Hilde Marr","role":"Halberd","wage":150,"exempt":false},{"name":"Pieter Holm","role":"Handgunner","wage":240,"exempt":false},{"name":"Anselm Rugg","role":"Surgeon","wage":300,"exempt":false},{"name":"Karl Stein","role":"Recruit","wage":48,"exempt":false},{"name":"Wilma Oder","role":"Wounded","wage":150,"exempt":true},{"name":"","role":"","wage":0,"exempt":false}]}</script>
+<script>
+(function(){
+  "use strict";
+  var GC = 240, S = 12;
+  var STORAGE_KEY = "wfrp.paymaster-ledger.v1";
+  var seedJson = document.getElementById("state").textContent;
+  var loaded = loadState();
+  var state = loaded.state;
+  var saveState = loaded.fromStore ? "saved" : "idle";
+  var saveTimer = null;
+
+  function seedState(){ return JSON.parse(seedJson); }
+
+  function sanitize(raw){
+    if (!raw || typeof raw !== "object") return null;
+    var period = raw.period === "month" ? "month" : (raw.period === "week" ? "week" : null);
+    var rounding = (raw.rounding === "up" || raw.rounding === "nearest" || raw.rounding === "down") ? raw.rounding : null;
+    if (!period || !rounding || !Array.isArray(raw.people)) return null;
+    if (raw.people.length < 1 || raw.people.length > 100) return null;
+    if (typeof raw.company !== "string" || raw.company.length > 80) return null;
+    var allowance = Number(raw.allowance), higherAt = Number(raw.higherAt);
+    var baseRate = Number(raw.baseRate), higherRate = Number(raw.higherRate);
+    if (!isFinite(allowance) || allowance < 0 || allowance > 1e8) return null;
+    if (!isFinite(higherAt) || higherAt < 0 || higherAt > 1e8) return null;
+    if (!isFinite(baseRate) || baseRate < 0 || baseRate > 100) return null;
+    if (!isFinite(higherRate) || higherRate < 0 || higherRate > 100) return null;
+    var people = [];
+    for (var i = 0; i < raw.people.length; i++) {
+      var p = raw.people[i];
+      if (!p || typeof p !== "object") return null;
+      if (typeof p.name !== "string" || typeof p.role !== "string") return null;
+      if (p.name.length > 80 || p.role.length > 80) return null;
+      var wage = Number(p.wage);
+      if (!isFinite(wage) || wage < 0 || wage > 1e8) return null;
+      people.push({name: p.name, role: p.role, wage: Math.round(wage), exempt: !!p.exempt});
+    }
+    return {
+      company: raw.company,
+      period: period,
+      allowance: Math.round(allowance),
+      baseRate: baseRate,
+      higherAt: Math.round(higherAt),
+      higherRate: higherRate,
+      rounding: rounding,
+      people: people
+    };
+  }
+
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var clean = sanitize(JSON.parse(raw));
+        if (clean) return {state: clean, fromStore: true};
+      }
+    } catch (err) {}
+    return {state: JSON.parse(seedJson), fromStore: false};
+  }
+
+  function flushSave(){
+    if (saveState !== "pending") return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      saveState = "saved";
+    } catch (err) {
+      saveState = "error";
+    }
+    renderBar();
+  }
+
+  function scheduleSave(){
+    saveState = "pending";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushSave, 400);
+  }
+
+  window.addEventListener("pagehide", flushSave);
+
+  function resetLedger(){
+    if (!window.confirm("Clear the ledger saved in this browser and restore the sample company?")) return;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (err) {}
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    state = seedState();
+    saveState = "idle";
+    render();
+  }
+
+  // ---------- money ----------
+  function split(p){ p = Math.max(0, Math.round(p)); return {gc:Math.floor(p/GC), s:Math.floor((p%GC)/S), d:p%S}; }
+  function fmt(p){
+    var c = split(p), parts = [];
+    if (c.gc) parts.push(c.gc + " GC");
+    if (c.s) parts.push(c.s + "/-");
+    if (c.d || !parts.length) parts.push(c.d + "d");
+    return parts.join(" ");
+  }
+  function roundP(x){
+    if (state.rounding === "up") return Math.ceil(x - 1e-9);
+    if (state.rounding === "nearest") return Math.round(x);
+    return Math.floor(x + 1e-9);
+  }
+
+  // ---------- tax (marginal) ----------
+  function taxFor(gross){
+    var A = state.allowance, H = state.higherAt;
+    var br = state.baseRate/100, hr = state.higherRate/100;
+    var baseBand = Math.max(0, Math.min(gross, H) - A);
+    var higherBand = Math.max(0, gross - Math.max(H, A));
+    var raw = baseBand*br + higherBand*hr;
+    return {tax: roundP(raw), baseBand: baseBand, higherBand: higherBand};
+  }
+
+  // ---------- UI builders ----------
+  function el(tag, attrs, html){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function coinInput(idBase, pennies, onChange){
+    var wrap = el("div", {"class":"coin-in"});
+    var c = split(pennies);
+    var defs = [["gc","Gold crowns","GC"],["s","Silver shillings","/-"],["d","Brass pennies","d"]];
+    var inputs = {};
+    defs.forEach(function(d){
+      var span = el("span");
+      var id = idBase + "-" + d[0];
+      var lab = el("small", null, '<i class="dot ' + d[0] + '"></i><label for="' + id + '" style="margin:0;font-size:inherit">' + d[2] + '</label>');
+      lab.title = d[1];
+      var inp = el("input", {type:"number", min:"0", step:"1", inputmode:"numeric", id:id, "aria-label":d[1], value:String(c[d[0]])});
+      inputs[d[0]] = inp;
+      inp.addEventListener("input", function(){
+        var v = function(x){ var n = parseInt(inputs[x].value,10); return isNaN(n)||n<0 ? 0 : n; };
+        onChange(v("gc")*GC + v("s")*S + v("d"));
+      });
+      inp.addEventListener("blur", function(){
+        var v = function(x){ var n = parseInt(inputs[x].value,10); return isNaN(n)||n<0 ? 0 : n; };
+        var n = split(v("gc")*GC + v("s")*S + v("d"));
+        inputs.gc.value = n.gc; inputs.s.value = n.s; inputs.d.value = n.d;
+      });
+      span.appendChild(lab); span.appendChild(inp); wrap.appendChild(span);
+    });
+    return wrap;
+  }
+  function field(labelText, control, hintNode){
+    var d = el("div");
+    var l = el("label"); l.textContent = labelText;
+    if (control.id) l.setAttribute("for", control.id);
+    d.appendChild(l); d.appendChild(control);
+    if (hintNode) d.appendChild(hintNode);
+    return d;
+  }
+  function pctInput(id, val, onChange){
+    var w = el("div", {"class":"pct"});
+    var i = el("input", {type:"number", min:"0", max:"100", step:"0.5", id:id, value:String(val), inputmode:"decimal"});
+    i.addEventListener("input", function(){
+      var n = parseFloat(i.value); if (isNaN(n)) n = 0; n = Math.min(100, Math.max(0, n)); onChange(n);
+    });
+    w.appendChild(i); w.appendChild(el("span", null, "%"));
+    return w;
+  }
+  function markDirty(){
+    var showStatus = saveState !== "pending";
+    scheduleSave();
+    recalc();
+    if (showStatus) renderBar();
+  }
+
+  // ---------- render ----------
+  var refs = {rows: []};
+  function render(){
+    var app = document.getElementById("app");
+    app.innerHTML = "";
+    var h1 = el("h1"); h1.textContent = state.company || "The company"; refs.h1 = h1;
+    app.appendChild(h1);
+    app.appendChild(el("p", {"class":"lede"}, "The paymaster's ledger. Pay above the allowance is taxed at the base rate, and only the part above the higher threshold is taxed at the higher rate. 1 GC = 20/- = 240d."));
+
+    // settings
+    var sec = el("section", {"aria-labelledby":"set-h"});
+    sec.appendChild(el("h2", {id:"set-h"}, "Terms of the charter"));
+    var grid = el("div", {"class":"settings"});
+
+    var name = el("input", {type:"text", id:"company", value:state.company, maxlength:"80"});
+    name.addEventListener("input", function(){ state.company = name.value; refs.h1.textContent = name.value || "The company"; markDirty(); });
+    grid.appendChild(field("Company name", name));
+
+    var per = el("select", {id:"period"});
+    [["week","Per week"],["month","Per month"]].forEach(function(o){
+      var op = el("option", {value:o[0]}); op.textContent = o[1]; if (state.period===o[0]) op.selected = true; per.appendChild(op);
+    });
+    per.addEventListener("change", function(){ state.period = per.value; markDirty(); });
+    grid.appendChild(field("Pay period", per, el("p",{"class":"hint"},"All amounts below are for this period.")));
+
+    var allow = coinInput("allow", state.allowance, function(p){ state.allowance = p; markDirty(); });
+    var aw = el("div"); aw.appendChild(el("label", null, "Tax-free allowance")); aw.appendChild(allow);
+    aw.appendChild(el("p",{"class":"hint"},"Nobody pays tax on pay up to this amount."));
+    grid.appendChild(aw);
+
+    grid.appendChild(field("Base rate", pctInput("base", state.baseRate, function(n){ state.baseRate = n; markDirty(); })));
+
+    var hi = coinInput("hiat", state.higherAt, function(p){ state.higherAt = p; markDirty(); });
+    var hw = el("div"); hw.appendChild(el("label", null, "Higher rate starts at")); hw.appendChild(hi);
+    refs.hiHint = el("p",{"class":"hint"}); hw.appendChild(refs.hiHint);
+    grid.appendChild(hw);
+
+    grid.appendChild(field("Higher rate", pctInput("higher", state.higherRate, function(n){ state.higherRate = n; markDirty(); })));
+
+    var rnd = el("select", {id:"rounding"});
+    [["down","Round down (favours the soldier)"],["nearest","Round to nearest penny"],["up","Round up (favours the paymaster)"]].forEach(function(o){
+      var op = el("option", {value:o[0]}); op.textContent = o[1]; if (state.rounding===o[0]) op.selected = true; rnd.appendChild(op);
+    });
+    rnd.addEventListener("change", function(){ state.rounding = rnd.value; markDirty(); });
+    grid.appendChild(field("Part-penny tax", rnd));
+
+    sec.appendChild(grid);
+    refs.strip = el("div", {"class":"band-strip", "aria-hidden":"true"});
+    sec.appendChild(refs.strip);
+    refs.stripHint = el("p", {"class":"hint"});
+    sec.appendChild(refs.stripHint);
+    app.appendChild(sec);
+
+    // people
+    var ps = el("section", {"aria-labelledby":"ppl-h"});
+    ps.appendChild(el("h2", {id:"ppl-h"}, "The muster roll"));
+    var list = el("div", {"class":"people"});
+    list.appendChild(el("div", {"class":"row head"}, "<span>Name</span><span>Role</span><span>Wage</span><span>Exempt</span><span>Tax</span><span>Take-home</span>"));
+    refs.rows = [];
+    state.people.forEach(function(p, i){
+      var row = el("div", {"class":"row"});
+      var n = el("input", {type:"text", id:"n"+i, maxlength:"80", placeholder:"Slot " + (i+1), value:p.name, "aria-label":"Name, slot " + (i+1)});
+      n.addEventListener("input", function(){ p.name = n.value; markDirty(); });
+      var r = el("input", {type:"text", id:"r"+i, maxlength:"80", placeholder:"Role", value:p.role, "aria-label":"Role, slot " + (i+1)});
+      r.addEventListener("input", function(){ p.role = r.value; markDirty(); });
+      var nc = el("div"); nc.appendChild(el("span",{"class":"cell-label"},"Name")); nc.appendChild(n);
+      var rc = el("div"); rc.appendChild(el("span",{"class":"cell-label"},"Role")); rc.appendChild(r);
+      var wc = el("div", {"class":"wage"}); wc.appendChild(el("span",{"class":"cell-label"},"Wage"));
+      wc.appendChild(coinInput("w"+i, p.wage, function(v){ p.wage = v; markDirty(); }));
+      var ec = el("div", {"class":"chk"});
+      var ex = el("input", {type:"checkbox", id:"x"+i}); ex.checked = !!p.exempt;
+      ex.addEventListener("change", function(){ p.exempt = ex.checked; markDirty(); });
+      var exl = el("label", {"for":"x"+i, style:"margin:0"}, "Exempt");
+      ec.appendChild(ex); ec.appendChild(exl);
+      var tc = el("div", {"class":"out tax"}); var hc = el("div", {"class":"out"});
+      row.appendChild(nc); row.appendChild(rc); row.appendChild(wc); row.appendChild(ec); row.appendChild(tc); row.appendChild(hc);
+      list.appendChild(row);
+      refs.rows.push({row:row, tax:tc, net:hc});
+    });
+    ps.appendChild(list);
+    app.appendChild(ps);
+
+    // treasury
+    var ts = el("section", {"aria-labelledby":"tr-h"});
+    ts.appendChild(el("h2", {id:"tr-h"}, "The strongbox"));
+    refs.treasury = el("div", {"class":"treasury", "aria-live":"polite"});
+    ts.appendChild(refs.treasury);
+    app.appendChild(ts);
+
+    recalc();
+    renderBar();
+  }
+
+  function recalc(){
+    var A = state.allowance, H = state.higherAt;
+    if (H < A) {
+      refs.hiHint.innerHTML = '<span class="warn">This is below the allowance, so no pay is taxed at the base rate.</span>';
+    } else if (H === A) {
+      refs.hiHint.textContent = "Same as the allowance, so everything taxable goes at the higher rate.";
+    } else {
+      refs.hiHint.textContent = "Base-rate band: " + fmt(A) + " to " + fmt(H) + ".";
+    }
+    // strip scaled to the top earner (or 2x threshold)
+    var maxWage = 0; state.people.forEach(function(p){ if (p.wage > maxWage) maxWage = p.wage; });
+    var scale = Math.max(maxWage, H * 1.25, A * 1.25, 1);
+    var a = Math.min(A, scale), b = Math.max(0, Math.min(H, scale) - a), c = Math.max(0, scale - Math.max(H, A));
+    refs.strip.innerHTML = '<i style="width:' + (a/scale*100) + '%;background:var(--good)"></i>' +
+      '<i style="width:' + (b/scale*100) + '%;background:var(--brass)"></i>' +
+      '<i style="width:' + (c/scale*100) + '%;background:var(--oxblood)"></i>';
+    refs.stripHint.textContent = "Green: tax-free. Brass: " + state.baseRate + "%. Red: " + state.higherRate + "%. Scaled to the highest wage on the roll.";
+
+    var totG = 0, totT = 0, count = 0, payers = 0;
+    state.people.forEach(function(p, i){
+      var rf = refs.rows[i];
+      var active = p.wage > 0 || p.name.trim() !== "";
+      rf.row.classList.toggle("exempt", !!p.exempt);
+      if (!active) { rf.tax.innerHTML = '<span class="cell-label">Tax</span>—'; rf.net.innerHTML = '<span class="cell-label">Take-home</span>—'; return; }
+      count++;
+      var t = p.exempt ? {tax:0, baseBand:0, higherBand:0} : taxFor(p.wage);
+      var net = p.wage - t.tax;
+      totG += p.wage; totT += t.tax; if (t.tax > 0) payers++;
+      var eff = p.wage ? (t.tax / p.wage * 100) : 0;
+      var detail = p.exempt ? "exempt" : (eff.toFixed(1) + "% effective");
+      rf.tax.innerHTML = '<span class="cell-label">Tax</span><b></b><small></small>';
+      rf.tax.querySelector("b").textContent = fmt(t.tax);
+      rf.tax.querySelector("small").textContent = detail;
+      rf.net.innerHTML = '<span class="cell-label">Take-home</span><b></b>';
+      rf.net.querySelector("b").textContent = fmt(net);
+    });
+    var per = state.period === "month" ? "per month" : "per week";
+    var effAll = totG ? (totT / totG * 100).toFixed(1) : "0.0";
+    refs.treasury.innerHTML = "";
+    [["Wage bill", fmt(totG), count + " on the roll, " + per, ""],
+     ["Tax collected", fmt(totT), payers + " paying, " + effAll + "% of the wage bill", "tax"],
+     ["Paid out", fmt(totG - totT), "what leaves the strongbox " + per, ""]].forEach(function(x){
+      var d = el("div");
+      var l = el("label"); l.textContent = x[0];
+      var b = el("div", {"class":"big " + x[3]}); b.textContent = x[1];
+      var s = el("p", {"class":"hint"}); s.textContent = x[2];
+      d.appendChild(l); d.appendChild(b); d.appendChild(s);
+      refs.treasury.appendChild(d);
+    });
+  }
+
+  function renderBar(){
+    var bar = document.getElementById("bar");
+    bar.innerHTML = "";
+    var msg = el("p", {"aria-live":"polite"});
+    if (saveState === "pending") msg.textContent = "Saving in this browser…";
+    else if (saveState === "error") msg.textContent = "This browser blocked saving, so a refresh will lose these edits.";
+    else if (saveState === "saved") msg.textContent = "Saved in this browser. A refresh keeps your ledger. Each visitor has their own.";
+    else msg.textContent = "Edits save automatically in this browser, and stay on this device.";
+    var reset = el("button", {type:"button", "class":"ghost"}, "Restore sample");
+    reset.addEventListener("click", resetLedger);
+    bar.appendChild(msg);
+    bar.appendChild(reset);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
