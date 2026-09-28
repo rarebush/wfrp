@@ -182,8 +182,8 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
   function fmt(p){
     var c = split(p), parts = [];
     if (c.gc) parts.push(c.gc + " GC");
-    if (c.s) parts.push(c.s + "/-");
-    if (c.d || !parts.length) parts.push(c.d + "d");
+    if (c.s) parts.push(c.s + " SS");
+    if (c.d || !parts.length) parts.push(c.d + " BP");
     return parts.join(" ");
   }
   function roundP(x){
@@ -212,7 +212,7 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
   function coinInput(idBase, pennies, onChange){
     var wrap = el("div", {"class":"coin-in"});
     var c = split(pennies);
-    var defs = [["gc","Gold crowns","GC"],["s","Silver shillings","/-"],["d","Brass pennies","d"]];
+    var defs = [["gc","Gold crowns","GC"],["s","Silver shillings","SS"],["d","Brass pennies","BP"]];
     var inputs = {};
     defs.forEach(function(d){
       var span = el("span");
@@ -265,7 +265,7 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
     app.innerHTML = "";
     var h1 = el("h1"); h1.textContent = state.company || "The company"; refs.h1 = h1;
     app.appendChild(h1);
-    app.appendChild(el("p", {"class":"lede"}, "The paymaster's ledger. Pay above the allowance is taxed at the base rate, and only the part above the higher threshold is taxed at the higher rate. 1 GC = 20/- = 240d."));
+    app.appendChild(el("p", {"class":"lede"}, "The paymaster's ledger. Pay above the allowance is taxed at the base rate, and only the part above the higher threshold is taxed at the higher rate. 1 GC = 20 SS = 240 BP."));
 
     // settings
     var sec = el("section", {"aria-labelledby":"set-h"});
